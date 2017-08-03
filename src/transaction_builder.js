@@ -414,7 +414,9 @@ function buildInput (input, allowIncomplete) {
       sig = buildStack(input.redeemScriptType, input.signatures, input.pubKeys, allowIncomplete)
     }
     // If it wasn't SIGNABLE, it's witness, defer to that
-    scriptType = input.redeemScriptType
+    if (input.redeemScriptType !== undefined) {
+      scriptType = input.redeemScriptType
+    }
   }
 
   if (scriptType === bscript.types.P2WPKH) {
@@ -432,7 +434,7 @@ function buildInput (input, allowIncomplete) {
   }
 
   // append redeemScript if necessary
-  if (p2sh) {
+  if (p2sh && input.redeemScript) {
     sig.push(input.redeemScript)
   }
 
