@@ -1,6 +1,7 @@
 /// <reference types="node" />
 export declare const typeforce: any;
 export declare function isPoint(p: Buffer | number | undefined | null): boolean;
+export declare function isXOnlyPoint(p: Buffer | number | undefined | null): boolean;
 export declare function UInt31(value: number): boolean;
 export declare function BIP32Path(value: string): boolean;
 export declare namespace BIP32Path {
@@ -28,7 +29,6 @@ export declare function isTapleaf(o: any): o is Tapleaf;
 export declare type Taptree = [Taptree | Tapleaf, Taptree | Tapleaf] | Tapleaf;
 export declare function isTaptree(scriptTree: any): scriptTree is Taptree;
 export interface TinySecp256k1Interface {
-    isXOnlyPoint(p: Uint8Array): boolean;
     xOnlyPointAddTweak(p: Uint8Array, tweak: Uint8Array): XOnlyPointAddTweakResult | null;
     privateAdd(d: Uint8Array, tweak: Uint8Array): Uint8Array | null;
     privateNegate(d: Uint8Array): Uint8Array;

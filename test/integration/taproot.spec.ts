@@ -17,7 +17,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
     const myKey = bip32.fromSeed(rng(64), regtest);
 
     const output = createKeySpendOutput(myKey.publicKey);
-    const address = bitcoin.address.fromOutputScript(output, regtest, ecc);
+    const address = bitcoin.address.fromOutputScript(output, regtest);
     // amount from faucet
     const amount = 42e4;
     // amount to send
@@ -52,8 +52,11 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
     const internalKey = bip32.fromSeed(rng(64), regtest);
 
     const { output, address } = bitcoin.payments.p2tr(
-      { internalPubkey: toXOnly(internalKey.publicKey), network: regtest },
-      { eccLib: ecc },
+      {
+        internalPubkey: toXOnly(internalKey.publicKey),
+        network: regtest,
+      },
+      { tweakFn: ecc.xOnlyPointAddTweak },
     );
 
     // amount from faucet
@@ -63,7 +66,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
     // get faucet
     const unspent = await regtestUtils.faucetComplex(output!, amount);
 
-    const psbt = new bitcoin.Psbt({ eccLib: ecc, network: regtest });
+    const psbt = new bitcoin.Psbt({ network: regtest });
     psbt.addInput({
       hash: unspent.txId,
       index: 0,
@@ -108,7 +111,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         scriptTree,
         network: regtest,
       },
-      { eccLib: ecc },
+      { tweakFn: ecc.xOnlyPointAddTweak },
     );
 
     // amount from faucet
@@ -118,7 +121,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
     // get faucet
     const unspent = await regtestUtils.faucetComplex(output!, amount);
 
-    const psbt = new bitcoin.Psbt({ eccLib: ecc, network: regtest });
+    const psbt = new bitcoin.Psbt({ network: regtest });
     psbt.addInput({
       hash: unspent.txId,
       index: 0,
@@ -213,7 +216,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         redeem,
         network: regtest,
       },
-      { eccLib: ecc },
+      { tweakFn: ecc.xOnlyPointAddTweak },
     );
 
     // amount from faucet
@@ -223,7 +226,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
     // get faucet
     const unspent = await regtestUtils.faucetComplex(output!, amount);
 
-    const psbt = new bitcoin.Psbt({ eccLib: ecc, network: regtest });
+    const psbt = new bitcoin.Psbt({ network: regtest });
     psbt.addInput({
       hash: unspent.txId,
       index: 0,
@@ -290,7 +293,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         redeem,
         network: regtest,
       },
-      { eccLib: ecc },
+      { tweakFn: ecc.xOnlyPointAddTweak },
     );
 
     // amount from faucet
@@ -300,7 +303,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
     // get faucet
     const unspent = await regtestUtils.faucetComplex(output!, amount);
 
-    const psbt = new bitcoin.Psbt({ eccLib: ecc, network: regtest });
+    const psbt = new bitcoin.Psbt({ network: regtest });
     psbt.addInput({
       hash: unspent.txId,
       index: 0,
@@ -389,7 +392,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
         redeem,
         network: regtest,
       },
-      { eccLib: ecc },
+      { tweakFn: ecc.xOnlyPointAddTweak },
     );
 
     // amount from faucet
@@ -399,7 +402,7 @@ describe('bitcoinjs-lib (transaction with taproot)', () => {
     // get faucet
     const unspent = await regtestUtils.faucetComplex(output!, amount);
 
-    const psbt = new bitcoin.Psbt({ eccLib: ecc, network: regtest });
+    const psbt = new bitcoin.Psbt({ network: regtest });
     psbt.addInput({
       hash: unspent.txId,
       index: 0,

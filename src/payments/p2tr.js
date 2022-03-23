@@ -8,7 +8,6 @@ const types_1 = require('../types');
 const taprootutils_1 = require('./taprootutils');
 const lazy = require('./lazy');
 const bech32_1 = require('bech32');
-const verifyecc_1 = require('./verifyecc');
 const OPS = bscript.OPS;
 const TAPROOT_WITNESS_VERSION = 0x01;
 const ANNEX_PREFIX = 0x50;
@@ -22,10 +21,10 @@ function p2tr(a, opts) {
   )
     throw new TypeError('Not enough data');
   opts = Object.assign({ validate: true }, opts || {});
-  const _ecc = lazy.value(() => {
-    if (!opts.eccLib) throw new Error('ECC Library is missing for p2tr.');
-    (0, verifyecc_1.verifyEcc)(opts.eccLib);
-    return opts.eccLib;
+  const _tweakFn = lazy.value(() => {
+    if (!opts.tweakFn) throw new Error('Tweak function is missing for p2tr.');
+    verifyTweakFn(opts.tweakFn);
+    return opts.tweakFn;
   });
   (0, types_1.typeforce)(
     {
@@ -132,7 +131,7 @@ function p2tr(a, opts) {
     if (a.output) return a.output.slice(2);
     if (a.address) return _address().data;
     if (o.internalPubkey) {
-      const tweakedKey = tweakKey(o.internalPubkey, o.hash, _ecc());
+      const tweakedKey = tweakKey(o.internalPubkey, o.hash, _tweakFn());
       if (tweakedKey) return tweakedKey.x;
     }
   });
@@ -157,7 +156,7 @@ function p2tr(a, opts) {
       });
       const path = (0, taprootutils_1.findScriptPath)(hashTree, leafHash);
       if (!path) return;
-      const outputKey = tweakKey(a.internalPubkey, hashTree.hash, _ecc());
+      const outputKey = tweakKey(a.internalPubkey, hashTree.hash, _tweakFn());
       if (!outputKey) return;
       const controlBock = buffer_1.Buffer.concat(
         [
@@ -198,13 +197,13 @@ function p2tr(a, opts) {
       else pubkey = a.output.slice(2);
     }
     if (a.internalPubkey) {
-      const tweakedKey = tweakKey(a.internalPubkey, o.hash, _ecc());
+      const tweakedKey = tweakKey(a.internalPubkey, o.hash, _tweakFn());
       if (pubkey.length > 0 && !pubkey.equals(tweakedKey.x))
         throw new TypeError('Pubkey mismatch');
       else pubkey = tweakedKey.x;
     }
     if (pubkey && pubkey.length) {
-      if (!_ecc().isXOnlyPoint(pubkey))
+      if (!(0, types_1.isXOnlyPoint)(pubkey))
         throw new TypeError('Invalid pubkey for p2tr');
     }
     const hashTree = _hashTree();
@@ -267,7 +266,7 @@ function p2tr(a, opts) {
         const internalPubkey = controlBlock.slice(1, 33);
         if (a.internalPubkey && !a.internalPubkey.equals(internalPubkey))
           throw new TypeError('Internal pubkey mismatch');
-        if (!_ecc().isXOnlyPoint(internalPubkey))
+        if (!(0, types_1.isXOnlyPoint)(internalPubkey))
           throw new TypeError('Invalid internalPubkey for p2tr witness');
         const leafVersion = controlBlock[0] & types_1.TAPLEAF_VERSION_MASK;
         const script = witness[witness.length - 2];
@@ -279,7 +278,7 @@ function p2tr(a, opts) {
           controlBlock,
           leafHash,
         );
-        const outputKey = tweakKey(internalPubkey, hash, _ecc());
+        const outputKey = tweakKey(internalPubkey, hash, _tweakFn());
         if (!outputKey)
           // todo: needs test data
           throw new TypeError('Invalid outputKey for p2tr witness');
@@ -293,12 +292,12 @@ function p2tr(a, opts) {
   return Object.assign(o, a);
 }
 exports.p2tr = p2tr;
-function tweakKey(pubKey, h, eccLib) {
+function tweakKey(pubKey, h, tweakFn) {
   if (!buffer_1.Buffer.isBuffer(pubKey)) return null;
   if (pubKey.length !== 32) return null;
   if (h && h.length !== 32) return null;
   const tweakHash = (0, taprootutils_1.tapTweakHash)(pubKey, h);
-  const res = eccLib.xOnlyPointAddTweak(pubKey, tweakHash);
+  const res = tweakFn(pubKey, tweakHash);
   if (!res || res.xOnlyPubkey === null) return null;
   return {
     parity: res.parity,
@@ -309,5 +308,45 @@ function stacksEqual(a, b) {
   if (a.length !== b.length) return false;
   return a.every((x, i) => {
     return x.equals(b[i]);
+  });
+}
+function verifyTweakFn(tweakFn) {
+  [
+    {
+      pubkey:
+        '79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
+      tweak: 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140',
+      parity: -1,
+      result: null,
+    },
+    {
+      pubkey:
+        '1617d38ed8d8657da4d4761e8057bc396ea9e4b9d29776d4be096016dbd2509b',
+      tweak: 'a8397a935f0dfceba6ba9618f6451ef4d80637abf4e6af2669fbc9de6a8fd2ac',
+      parity: 1,
+      result:
+        'e478f99dab91052ab39a33ea35fd5e6e4933f4d28023cd597c9a1f6760346adf',
+    },
+    {
+      pubkey:
+        '2c0b7cf95324a07d05398b240174dc0c2be444d96b159aa6c7f7b1e668680991',
+      tweak: '823c3cd2142744b075a87eade7e1b8678ba308d566226a0056ca2b7a76f86b47',
+      parity: 0,
+      result:
+        '9534f8dc8c6deda2dc007655981c78b49c5d96c778fbf363462a11ec9dfd948c',
+    },
+  ].forEach(t => {
+    const r = tweakFn(
+      Buffer.from(t.pubkey, 'hex'),
+      Buffer.from(t.tweak, 'hex'),
+    );
+    if (t.result === null) {
+      if (r !== null) throw new Error('Expected failed tweak');
+    } else {
+      if (r === null) throw new Error('Expected successful tweak');
+      if (r.parity !== t.parity) throw new Error('Tweaked key parity mismatch');
+      if (!Buffer.from(r.xOnlyPubkey).equals(Buffer.from(t.result, 'hex')))
+        throw new Error('Tweaked key mismatch');
+    }
   });
 }

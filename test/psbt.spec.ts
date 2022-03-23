@@ -140,8 +140,7 @@ describe(`Psbt`, () => {
 
     fixtures.bip174.signer.forEach(f => {
       it('Signs PSBT to the expected result', () => {
-        const opts = f.isTaproot ? { eccLib: ecc } : {};
-        const psbt = Psbt.fromBase64(f.psbt, opts);
+        const psbt = Psbt.fromBase64(f.psbt);
 
         f.keys.forEach(({ inputToSign, WIF }) => {
           const keyPair = ECPair.fromWIF(WIF, NETWORKS.testnet);
@@ -168,8 +167,7 @@ describe(`Psbt`, () => {
 
     fixtures.bip174.finalizer.forEach(f => {
       it('Finalizes inputs and gives the expected PSBT', () => {
-        const opts = f.isTaproot ? { eccLib: ecc } : {};
-        const psbt = Psbt.fromBase64(f.psbt, opts);
+        const psbt = Psbt.fromBase64(f.psbt);
 
         psbt.finalizeAllInputs();
 
@@ -964,7 +962,7 @@ describe(`Psbt`, () => {
   describe('validateSignaturesOfTaprootInput', () => {
     const f = fixtures.validateSignaturesOfTaprootInput;
     it('Correctly validates a signature', () => {
-      const psbt = Psbt.fromBase64(f.psbt, { eccLib: ecc });
+      const psbt = Psbt.fromBase64(f.psbt);
       assert.strictEqual(
         psbt.validateSignaturesOfInput(f.index, schnorrValidator),
         true,
@@ -972,7 +970,7 @@ describe(`Psbt`, () => {
     });
 
     it('Correctly validates a signature against a pubkey', () => {
-      const psbt = Psbt.fromBase64(f.psbt, { eccLib: ecc });
+      const psbt = Psbt.fromBase64(f.psbt);
       assert.strictEqual(
         psbt.validateSignaturesOfInput(
           f.index,
@@ -994,7 +992,7 @@ describe(`Psbt`, () => {
   describe('finalizeTaprootInput', () => {
     it('Correctly finalizes a taproot script-path spend', () => {
       const f = fixtures.finalizeTaprootScriptPathSpendInput;
-      const psbt = Psbt.fromBase64(f.psbt, { eccLib: ecc });
+      const psbt = Psbt.fromBase64(f.psbt);
       const tapscriptFinalizer = buildTapscriptFinalizer(
         f.internalPublicKey as any,
         f.scriptTree,
@@ -1006,7 +1004,7 @@ describe(`Psbt`, () => {
 
     it('Failes to finalize a taproot script-path spend when a finalizer is not provided', () => {
       const f = fixtures.finalizeTaprootScriptPathSpendInput;
-      const psbt = Psbt.fromBase64(f.psbt, { eccLib: ecc });
+      const psbt = Psbt.fromBase64(f.psbt);
 
       assert.throws(() => {
         psbt.finalizeInput(0);

@@ -1,16 +1,15 @@
 import * as assert from 'assert';
-import * as ecc from 'tiny-secp256k1';
+import { xOnlyPointAddTweak } from 'tiny-secp256k1';
 import { describe, it } from 'mocha';
-import { PaymentCreator } from '../src/payments';
+import { PaymentCreator, XOnlyTweakFunction } from '../src/payments';
 import * as u from './payments.utils';
-import { TinySecp256k1Interface } from '../src/types';
 
 ['embed', 'p2ms', 'p2pk', 'p2pkh', 'p2sh', 'p2wpkh', 'p2wsh', 'p2tr'].forEach(
   p => {
     describe(p, () => {
       let fn: PaymentCreator;
-      const eccLib: TinySecp256k1Interface | undefined =
-        p === 'p2tr' ? ecc : undefined;
+      const tweakFn: XOnlyTweakFunction | undefined =
+        p === 'p2tr' ? xOnlyPointAddTweak : undefined;
       const payment = require('../src/payments/' + p);
       if (p === 'embed') {
         fn = payment.p2data;
@@ -21,7 +20,7 @@ import { TinySecp256k1Interface } from '../src/types';
       const fixtures = require('./fixtures/' + p);
 
       fixtures.valid.forEach((f: any) => {
-        const options = Object.assign({ eccLib }, f.options || {});
+        const options = Object.assign({ tweakFn }, f.options || {});
         it(f.description + ' as expected', () => {
           const args = u.preform(f.arguments);
           const actual = fn(args, options);
@@ -43,7 +42,7 @@ import { TinySecp256k1Interface } from '../src/types';
       });
 
       fixtures.invalid.forEach((f: any) => {
-        const options = Object.assign({ eccLib }, f.options || {});
+        const options = Object.assign({ tweakFn }, f.options || {});
         it(
           'throws ' +
             f.exception +

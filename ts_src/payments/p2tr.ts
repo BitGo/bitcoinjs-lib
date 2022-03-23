@@ -4,7 +4,7 @@ import * as bscript from '../script';
 import {
   typeforce as typef,
   isTaptree,
-  TinySecp256k1Interface,
+  isXOnlyPoint,
   TAPLEAF_VERSION_MASK,
 } from '../types';
 import {
@@ -15,10 +15,9 @@ import {
   tapTweakHash,
   LEAF_VERSION_TAPSCRIPT,
 } from './taprootutils';
-import { Payment, PaymentOpts } from './index';
+import { Payment, PaymentOpts, XOnlyTweakFunction } from './index';
 import * as lazy from './lazy';
 import { bech32m } from 'bech32';
-import { verifyEcc } from './verifyecc';
 
 const OPS = bscript.OPS;
 const TAPROOT_WITNESS_VERSION = 0x01;
@@ -36,11 +35,11 @@ export function p2tr(a: Payment, opts?: PaymentOpts): Payment {
 
   opts = Object.assign({ validate: true }, opts || {});
 
-  const _ecc = lazy.value(() => {
-    if (!opts!.eccLib) throw new Error('ECC Library is missing for p2tr.');
+  const _tweakFn = lazy.value(() => {
+    if (!opts!.tweakFn) throw new Error('Tweak function is missing for p2tr.');
 
-    verifyEcc(opts!.eccLib);
-    return opts!.eccLib;
+    verifyTweakFn(opts!.tweakFn);
+    return opts!.tweakFn;
   });
 
   typef(
@@ -149,7 +148,7 @@ export function p2tr(a: Payment, opts?: PaymentOpts): Payment {
     if (a.output) return a.output.slice(2);
     if (a.address) return _address().data;
     if (o.internalPubkey) {
-      const tweakedKey = tweakKey(o.internalPubkey, o.hash, _ecc());
+      const tweakedKey = tweakKey(o.internalPubkey, o.hash, _tweakFn());
       if (tweakedKey) return tweakedKey.x;
     }
   });
@@ -175,7 +174,7 @@ export function p2tr(a: Payment, opts?: PaymentOpts): Payment {
       });
       const path = findScriptPath(hashTree, leafHash);
       if (!path) return;
-      const outputKey = tweakKey(a.internalPubkey, hashTree.hash, _ecc());
+      const outputKey = tweakKey(a.internalPubkey, hashTree.hash, _tweakFn());
       if (!outputKey) return;
       const controlBock = NBuffer.concat(
         [
@@ -220,15 +219,14 @@ export function p2tr(a: Payment, opts?: PaymentOpts): Payment {
     }
 
     if (a.internalPubkey) {
-      const tweakedKey = tweakKey(a.internalPubkey, o.hash, _ecc());
+      const tweakedKey = tweakKey(a.internalPubkey, o.hash, _tweakFn());
       if (pubkey.length > 0 && !pubkey.equals(tweakedKey!.x))
         throw new TypeError('Pubkey mismatch');
       else pubkey = tweakedKey!.x;
     }
 
     if (pubkey && pubkey.length) {
-      if (!_ecc().isXOnlyPoint(pubkey))
-        throw new TypeError('Invalid pubkey for p2tr');
+      if (!isXOnlyPoint(pubkey)) throw new TypeError('Invalid pubkey for p2tr');
     }
 
     const hashTree = _hashTree();
@@ -302,7 +300,7 @@ export function p2tr(a: Payment, opts?: PaymentOpts): Payment {
         if (a.internalPubkey && !a.internalPubkey.equals(internalPubkey))
           throw new TypeError('Internal pubkey mismatch');
 
-        if (!_ecc().isXOnlyPoint(internalPubkey))
+        if (!isXOnlyPoint(internalPubkey))
           throw new TypeError('Invalid internalPubkey for p2tr witness');
 
         const leafVersion = controlBlock[0] & TAPLEAF_VERSION_MASK;
@@ -311,7 +309,7 @@ export function p2tr(a: Payment, opts?: PaymentOpts): Payment {
         const leafHash = tapleafHash({ output: script, version: leafVersion });
         const hash = rootHashFromPath(controlBlock, leafHash);
 
-        const outputKey = tweakKey(internalPubkey, hash, _ecc());
+        const outputKey = tweakKey(internalPubkey, hash, _tweakFn());
         if (!outputKey)
           // todo: needs test data
           throw new TypeError('Invalid outputKey for p2tr witness');
@@ -336,7 +334,7 @@ interface TweakedPublicKey {
 function tweakKey(
   pubKey: Buffer,
   h: Buffer | undefined,
-  eccLib: TinySecp256k1Interface,
+  tweakFn: XOnlyTweakFunction,
 ): TweakedPublicKey | null {
   if (!NBuffer.isBuffer(pubKey)) return null;
   if (pubKey.length !== 32) return null;
@@ -344,7 +342,7 @@ function tweakKey(
 
   const tweakHash = tapTweakHash(pubKey, h);
 
-  const res = eccLib.xOnlyPointAddTweak(pubKey, tweakHash);
+  const res = tweakFn(pubKey, tweakHash);
   if (!res || res.xOnlyPubkey === null) return null;
 
   return {
@@ -358,5 +356,47 @@ function stacksEqual(a: Buffer[], b: Buffer[]): boolean {
 
   return a.every((x, i) => {
     return x.equals(b[i]);
+  });
+}
+
+function verifyTweakFn(tweakFn: XOnlyTweakFunction): void {
+  [
+    {
+      pubkey:
+        '79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
+      tweak: 'fffffffffffffffffffffffffffffffebaaedce6af48a03bbfd25e8cd0364140',
+      parity: -1,
+      result: null,
+    },
+    {
+      pubkey:
+        '1617d38ed8d8657da4d4761e8057bc396ea9e4b9d29776d4be096016dbd2509b',
+      tweak: 'a8397a935f0dfceba6ba9618f6451ef4d80637abf4e6af2669fbc9de6a8fd2ac',
+      parity: 1,
+      result:
+        'e478f99dab91052ab39a33ea35fd5e6e4933f4d28023cd597c9a1f6760346adf',
+    },
+    {
+      pubkey:
+        '2c0b7cf95324a07d05398b240174dc0c2be444d96b159aa6c7f7b1e668680991',
+      tweak: '823c3cd2142744b075a87eade7e1b8678ba308d566226a0056ca2b7a76f86b47',
+      parity: 0,
+      result:
+        '9534f8dc8c6deda2dc007655981c78b49c5d96c778fbf363462a11ec9dfd948c',
+    },
+  ].forEach(t => {
+    const r = tweakFn(
+      Buffer.from(t.pubkey, 'hex'),
+      Buffer.from(t.tweak, 'hex'),
+    );
+    if (t.result === null) {
+      if (r !== null) throw new Error('Expected failed tweak');
+    } else {
+      if (r === null) throw new Error('Expected successful tweak');
+      if (r!.parity !== t.parity)
+        throw new Error('Tweaked key parity mismatch');
+      if (!Buffer.from(r!.xOnlyPubkey).equals(Buffer.from(t.result, 'hex')))
+        throw new Error('Tweaked key mismatch');
+    }
   });
 }

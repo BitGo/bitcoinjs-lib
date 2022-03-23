@@ -1,6 +1,6 @@
 import { PsbtInput } from 'bip174/src/lib/interfaces';
 import * as bitcoin from './..';
-import { TinySecp256k1Interface } from '../src/types';
+import { xOnlyPointAddTweak } from 'tiny-secp256k1';
 
 /**
  * Build finalizer function for Tapscript.
@@ -20,7 +20,6 @@ const buildTapscriptFinalizer = (
     _isP2SH: boolean,
     _isP2WSH: boolean,
     _isTapscript: boolean,
-    eccLib?: TinySecp256k1Interface,
   ): {
     finalScriptSig: Buffer | undefined;
     finalScriptWitness: Buffer | Buffer[] | undefined;
@@ -36,7 +35,7 @@ const buildTapscriptFinalizer = (
           redeem: { output: script },
           network,
         },
-        { eccLib },
+        { tweakFn: xOnlyPointAddTweak },
       );
       const sigs = (input.partialSig || []).map(ps => ps.signature) as Buffer[];
       const finalScriptWitness = sigs.concat(

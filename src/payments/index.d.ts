@@ -1,6 +1,6 @@
 /// <reference types="node" />
 import { Network } from '../networks';
-import { TinySecp256k1Interface, Taptree } from '../types';
+import { Taptree, XOnlyPointAddTweakResult } from '../types';
 import { p2data as embed } from './embed';
 import { p2ms } from './p2ms';
 import { p2pk } from './p2pk';
@@ -31,10 +31,11 @@ export interface Payment {
 }
 export declare type PaymentCreator = (a: Payment, opts?: PaymentOpts) => Payment;
 export declare type PaymentFunction = () => Payment;
+export declare type XOnlyTweakFunction = (p: Buffer, t: Buffer) => XOnlyPointAddTweakResult | null;
 export interface PaymentOpts {
     validate?: boolean;
     allowIncomplete?: boolean;
-    eccLib?: TinySecp256k1Interface;
+    tweakFn?: XOnlyTweakFunction;
 }
 export declare type StackElement = Buffer | number;
 export declare type Stack = StackElement[];
