@@ -314,12 +314,19 @@ class TransactionBuilder {
   }
   __overMaximumFees(bytes) {
     // not all inputs will have .value defined
-    const incoming = this.__INPUTS.reduce((a, x) => a + (x.value >>> 0), 0);
+    const incoming = this.__INPUTS.reduce(
+      (a, x) =>
+        a + (typeof x.value !== 'undefined' ? BigInt(x.value) : BigInt(0)),
+      BigInt(0),
+    );
     // but all outputs do, and if we have any input value
     // we can immediately determine if the outputs are too small
-    const outgoing = this.__TX.outs.reduce((a, x) => a + x.value, 0);
+    const outgoing = this.__TX.outs.reduce(
+      (a, x) => a + BigInt(x.value),
+      BigInt(0),
+    );
     const fee = incoming - outgoing;
-    const feeRate = fee / bytes;
+    const feeRate = Number(fee) / bytes; // assume fee fits within number
     return feeRate > this.maximumFeeRate;
   }
 }

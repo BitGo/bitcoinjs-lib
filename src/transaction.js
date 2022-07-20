@@ -47,7 +47,7 @@ class Transaction {
     this.ins = [];
     this.outs = [];
   }
-  static fromBuffer(buffer, _NO_STRICT) {
+  static fromBuffer(buffer, _NO_STRICT, amountType = 'number') {
     const bufferReader = new bufferutils_1.BufferReader(buffer);
     const tx = new Transaction();
     tx.version = bufferReader.readInt32();
@@ -75,7 +75,10 @@ class Transaction {
     const voutLen = bufferReader.readVarInt();
     for (let i = 0; i < voutLen; ++i) {
       tx.outs.push({
-        value: bufferReader.readUInt64(),
+        value:
+          amountType === 'number'
+            ? bufferReader.readUInt64()
+            : bufferReader.readUInt64BigInt(),
         script: bufferReader.readVarSlice(),
       });
     }
@@ -93,8 +96,8 @@ class Transaction {
       throw new Error('Transaction has unexpected data');
     return tx;
   }
-  static fromHex(hex) {
-    return Transaction.fromBuffer(Buffer.from(hex, 'hex'), false);
+  static fromHex(hex, amountType = 'number') {
+    return Transaction.fromBuffer(Buffer.from(hex, 'hex'), false, amountType);
   }
   static isCoinbaseHash(buffer) {
     typeforce(types.Hash256bit, buffer);

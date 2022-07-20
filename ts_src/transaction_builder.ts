@@ -51,8 +51,8 @@ type TxbWitness = Buffer[];
 type TxbScriptType = string;
 type TxbScript = Buffer;
 
-interface TxbInput {
-  value?: number;
+interface TxbInput<TNumber extends number | bigint = number> {
+  value?: TNumber;
   witnessVersion?: number;
   signScript?: TxbScript;
   signType?: TxbScriptType;
@@ -80,13 +80,13 @@ interface TxbOutput {
   maxSignatures?: number;
 }
 
-interface TxbSignArg {
+interface TxbSignArg<TNumber extends number | bigint = number> {
   prevOutScriptType: string;
   vin: number;
   keyPair: Signer;
   redeemScript?: Buffer;
   hashType?: number;
-  witnessValue?: number;
+  witnessValue?: TNumber;
   witnessScript?: Buffer;
   controlBlock?: Buffer;
   annex?: Buffer;
@@ -100,20 +100,24 @@ function tfMessage(type: any, value: any, message: string): void {
   }
 }
 
-function txIsString(tx: Buffer | string | Transaction): tx is string {
+function txIsString<TNumber extends number | bigint = number>(
+  tx: Buffer | string | Transaction<TNumber>,
+): tx is string {
   return typeof tx === 'string' || tx instanceof String;
 }
 
-function txIsTransaction(tx: Buffer | string | Transaction): tx is Transaction {
+function txIsTransaction<TNumber extends number | bigint = number>(
+  tx: Buffer | string | Transaction<TNumber>,
+): tx is Transaction<TNumber> {
   return tx instanceof Transaction;
 }
 
-export class TransactionBuilder {
-  static fromTransaction(
-    transaction: Transaction,
+export class TransactionBuilder<TNumber extends number | bigint = number> {
+  static fromTransaction<TNumber extends number | bigint = number>(
+    transaction: Transaction<TNumber>,
     network?: Network,
-  ): TransactionBuilder {
-    const txb = new TransactionBuilder(network);
+  ): TransactionBuilder<TNumber> {
+    const txb = new TransactionBuilder<TNumber>(network);
 
     // Copy transaction fields
     txb.setVersion(transaction.version);
@@ -121,7 +125,7 @@ export class TransactionBuilder {
 
     // Copy outputs (done first to avoid signature invalidation)
     transaction.outs.forEach(txOut => {
-      txb.addOutput(txOut.script, (txOut as Output).value);
+      txb.addOutput(txOut.script, (txOut as Output<TNumber>).value);
     });
 
     // Copy inputs
@@ -135,15 +139,15 @@ export class TransactionBuilder {
 
     // fix some things not possible through the public API
     txb.__INPUTS.forEach((input, i) => {
-      fixMultisigOrder(input, transaction, i);
+      fixMultisigOrder<TNumber>(input, transaction, i);
     });
 
     return txb;
   }
 
   private __PREV_TX_SET: { [index: string]: boolean };
-  private __INPUTS: TxbInput[];
-  private __TX: Transaction;
+  private __INPUTS: Array<TxbInput<TNumber>>;
+  private __TX: Transaction<TNumber>;
   private __USE_LOW_R: boolean;
 
   // WARNING: maximumFeeRate is __NOT__ to be relied on,
@@ -154,7 +158,7 @@ export class TransactionBuilder {
   ) {
     this.__PREV_TX_SET = {};
     this.__INPUTS = [];
-    this.__TX = new Transaction();
+    this.__TX = new Transaction<TNumber>();
     this.__TX.version = 2;
     this.__USE_LOW_R = false;
     console.warn(
@@ -200,11 +204,11 @@ export class TransactionBuilder {
   }
 
   addInput(
-    txHash: Buffer | string | Transaction,
+    txHash: Buffer | string | Transaction<TNumber>,
     vout: number,
     sequence?: number,
     prevOutScript?: Buffer,
-    value?: number,
+    value?: TNumber,
   ): number {
     if (!this.__canModifyInputs()) {
       throw new Error('No, this would invalidate signatures');
@@ -219,7 +223,7 @@ export class TransactionBuilder {
     } else if (txIsTransaction(txHash)) {
       const txOut = txHash.outs[vout];
       prevOutScript = txOut.script;
-      value = (txOut as Output).value;
+      value = (txOut as Output<TNumber>).value;
 
       txHash = txHash.getHash(false) as Buffer;
     }
@@ -231,7 +235,7 @@ export class TransactionBuilder {
     });
   }
 
-  addOutput(scriptPubKey: string | Buffer, value: number): number {
+  addOutput(scriptPubKey: string | Buffer, value: TNumber): number {
     if (!this.__canModifyOutputs()) {
       throw new Error('No, this would invalidate signatures');
     }
@@ -244,26 +248,26 @@ export class TransactionBuilder {
     return this.__TX.addOutput(scriptPubKey, value);
   }
 
-  build(): Transaction {
+  build(): Transaction<TNumber> {
     return this.__build(false);
   }
 
-  buildIncomplete(): Transaction {
+  buildIncomplete(): Transaction<TNumber> {
     return this.__build(true);
   }
 
   sign(
-    signParams: number | TxbSignArg,
+    signParams: number | TxbSignArg<TNumber>,
     keyPair?: Signer,
     redeemScript?: Buffer,
     hashType?: number,
-    witnessValue?: number,
+    witnessValue?: TNumber,
     witnessScript?: Buffer,
     controlBlock?: Buffer,
     annex?: Buffer,
   ): void {
-    trySign(
-      getSigningData(
+    trySign<TNumber>(
+      getSigningData<TNumber>(
         this.network,
         this.__INPUTS,
         this.__needsOutputs.bind(this),
@@ -284,7 +288,7 @@ export class TransactionBuilder {
   private __addInputUnsafe(
     txHash: Buffer,
     vout: number,
-    options: TxbInput,
+    options: TxbInput<TNumber>,
   ): number {
     if (Transaction.isCoinbaseHash(txHash)) {
       throw new Error('coinbase inputs not supported');
@@ -294,11 +298,11 @@ export class TransactionBuilder {
     if (this.__PREV_TX_SET[prevTxOut] !== undefined)
       throw new Error('Duplicate TxOut: ' + prevTxOut);
 
-    let input: TxbInput = {};
+    let input: TxbInput<TNumber> = {};
 
     // derive what we can from the scriptSig
     if (options.script !== undefined || options.witness !== undefined) {
-      input = expandInput(options.script, options.witness);
+      input = expandInput<TNumber>(options.script, options.witness);
     }
 
     // if an input value was given, retain it
@@ -335,7 +339,7 @@ export class TransactionBuilder {
     return vin;
   }
 
-  private __build(allowIncomplete?: boolean): Transaction {
+  private __build(allowIncomplete?: boolean): Transaction<TNumber> {
     if (!allowIncomplete) {
       if (!this.__TX.ins.length) throw new Error('Transaction has no inputs');
       if (!this.__TX.outs.length) throw new Error('Transaction has no outputs');
@@ -348,7 +352,7 @@ export class TransactionBuilder {
       if (!input.prevOutType && !allowIncomplete)
         throw new Error('Transaction is not complete');
 
-      const result = build(input.prevOutType!, input, allowIncomplete);
+      const result = build<TNumber>(input.prevOutType!, input, allowIncomplete);
       if (!result) {
         if (!allowIncomplete && input.prevOutType === SCRIPT_TYPES.NONSTANDARD)
           throw new Error('Unknown input type');
@@ -438,27 +442,31 @@ export class TransactionBuilder {
 
   private __overMaximumFees(bytes: number): boolean {
     // not all inputs will have .value defined
-    const incoming = this.__INPUTS.reduce((a, x) => a + (x.value! >>> 0), 0);
+    const incoming = this.__INPUTS.reduce(
+      (a, x) =>
+        a + (typeof x.value !== 'undefined' ? BigInt(x.value) : BigInt(0)),
+      BigInt(0),
+    );
 
     // but all outputs do, and if we have any input value
     // we can immediately determine if the outputs are too small
     const outgoing = this.__TX.outs.reduce(
-      (a, x) => a + (x as Output).value,
-      0,
+      (a, x) => a + BigInt((x as Output<TNumber>).value),
+      BigInt(0),
     );
     const fee = incoming - outgoing;
-    const feeRate = fee / bytes;
+    const feeRate = Number(fee) / bytes; // assume fee fits within number
 
     return feeRate > this.maximumFeeRate;
   }
 }
 
-function expandInput(
+function expandInput<TNumber extends number | bigint = number>(
   scriptSig?: Buffer,
   witnessStack: Buffer[] = [],
   type?: string,
   scriptPubKey?: Buffer,
-): TxbInput {
+): TxbInput<TNumber> {
   if (scriptSig && scriptSig.length === 0 && witnessStack.length === 0)
     return {};
   if (!type) {
@@ -551,7 +559,7 @@ function expandInput(
     });
 
     const outputType = classify.output(redeem!.output!);
-    const expanded = expandInput(
+    const expanded = expandInput<TNumber>(
       redeem!.input!,
       redeem!.witness!,
       outputType,
@@ -580,9 +588,13 @@ function expandInput(
     const outputType = classify.output(redeem!.output!);
     let expanded;
     if (outputType === SCRIPT_TYPES.P2WPKH) {
-      expanded = expandInput(redeem!.input!, redeem!.witness!, outputType);
+      expanded = expandInput<TNumber>(
+        redeem!.input!,
+        redeem!.witness!,
+        outputType,
+      );
     } else {
-      expanded = expandInput(
+      expanded = expandInput<TNumber>(
         bscript.compile(redeem!.witness!),
         [],
         outputType,
@@ -622,7 +634,7 @@ function expandInput(
         annex,
       }).output;
       const witnessScriptType = classify.output(tapscript);
-      const { pubkeys, signatures } = expandInput(
+      const { pubkeys, signatures } = expandInput<TNumber>(
         undefined,
         parsedWitness.scriptSig,
         witnessScriptType,
@@ -651,9 +663,9 @@ function expandInput(
 }
 
 // could be done in expandInput, but requires the original Transaction for hashForSignature
-function fixMultisigOrder(
-  input: TxbInput,
-  transaction: Transaction,
+function fixMultisigOrder<TNumber extends number | bigint = number>(
+  input: TxbInput<TNumber>,
+  transaction: Transaction<TNumber>,
   vin: number,
 ): void {
   if (input.redeemScriptType !== SCRIPT_TYPES.P2MS || !input.redeemScript)
@@ -784,14 +796,14 @@ function expandOutput(
   return { type };
 }
 
-function prepareInput(
-  input: TxbInput,
+function prepareInput<TNumber extends number | bigint = number>(
+  input: TxbInput<TNumber>,
   ourPubKey: Buffer,
   redeemScript?: Buffer,
   witnessScript?: Buffer,
   controlBlock?: Buffer,
   annex?: Buffer,
-): TxbInput {
+): TxbInput<TNumber> {
   if (redeemScript && witnessScript) {
     const p2wsh = payments.p2wsh({
       redeem: { output: witnessScript },
@@ -1040,9 +1052,9 @@ function prepareInput(
   };
 }
 
-function build(
+function build<TNumber extends number | bigint = number>(
   type: string,
-  input: TxbInput,
+  input: TxbInput<TNumber>,
   allowIncomplete?: boolean,
 ): Payment | undefined {
   const pubkeys = (input.pubkeys || []) as Buffer[];
@@ -1084,7 +1096,11 @@ function build(
       );
     }
     case SCRIPT_TYPES.P2SH: {
-      const redeem = build(input.redeemScriptType!, input, allowIncomplete);
+      const redeem = build<TNumber>(
+        input.redeemScriptType!,
+        input,
+        allowIncomplete,
+      );
       if (!redeem) return;
 
       return payments.p2sh({
@@ -1096,7 +1112,11 @@ function build(
       });
     }
     case SCRIPT_TYPES.P2WSH: {
-      const redeem = build(input.witnessScriptType!, input, allowIncomplete);
+      const redeem = build<TNumber>(
+        input.witnessScriptType!,
+        input,
+        allowIncomplete,
+      );
       if (!redeem) return;
 
       return payments.p2wsh({
@@ -1110,7 +1130,11 @@ function build(
     case SCRIPT_TYPES.P2TR: {
       if (input.witnessScriptType === SCRIPT_TYPES.P2TR_NS) {
         // ScriptPath
-        const redeem = build(input.witnessScriptType!, input, allowIncomplete);
+        const redeem = build<TNumber>(
+          input.witnessScriptType!,
+          input,
+          allowIncomplete,
+        );
         return payments.p2tr({
           output: input.prevOutScript,
           controlBlock: input.controlBlock,
@@ -1144,7 +1168,9 @@ function build(
   }
 }
 
-function canSign(input: TxbInput): boolean {
+function canSign<TNumber extends number | bigint = number>(
+  input: TxbInput<TNumber>,
+): boolean {
   return (
     input.signScript !== undefined &&
     input.signType !== undefined &&
@@ -1163,7 +1189,10 @@ function signatureHashType(buffer: Buffer): number {
   return buffer.readUInt8(buffer.length - 1);
 }
 
-function checkSignArgs(inputs: TxbInput[], signParams: TxbSignArg): void {
+function checkSignArgs<TNumber extends number | bigint = number>(
+  inputs: Array<TxbInput<TNumber>>,
+  signParams: TxbSignArg<TNumber>,
+): void {
   if (!PREVOUT_TYPES.has(signParams.prevOutScriptType)) {
     throw new TypeError(
       `Unknown prevOutScriptType "${signParams.prevOutScriptType}"`,
@@ -1418,7 +1447,7 @@ function checkSignArgs(inputs: TxbInput[], signParams: TxbSignArg): void {
   }
 }
 
-function trySign({
+function trySign<TNumber extends number | bigint = number>({
   input,
   ourPubKey,
   keyPair,
@@ -1426,7 +1455,7 @@ function trySign({
   hashType,
   useLowR,
   taptreeRoot,
-}: SigningData): void {
+}: SigningData<TNumber>): void {
   if (input.witnessVersion === 1 && ourPubKey.length === 33)
     ourPubKey = ourPubKey.slice(1);
   // enforce in order signing of public keys
@@ -1475,8 +1504,8 @@ function trySign({
   if (!signed) throw new Error('Key pair cannot sign for this input');
 }
 
-interface SigningData {
-  input: TxbInput;
+interface SigningData<TNumber extends number | bigint = number> {
+  input: TxbInput<TNumber>;
   ourPubKey: Buffer;
   keyPair: Signer;
   signatureHash: Buffer;
@@ -1487,21 +1516,21 @@ interface SigningData {
 
 type HashTypeCheck = (hashType: number) => boolean;
 
-function getSigningData(
+function getSigningData<TNumber extends number | bigint = number>(
   network: Network,
-  inputs: TxbInput[],
+  inputs: Array<TxbInput<TNumber>>,
   needsOutputs: HashTypeCheck,
-  tx: Transaction,
-  signParams: number | TxbSignArg,
+  tx: Transaction<TNumber>,
+  signParams: number | TxbSignArg<TNumber>,
   keyPair?: Signer,
   redeemScript?: Buffer,
   hashType?: number,
-  witnessValue?: number,
+  witnessValue?: TNumber,
   witnessScript?: Buffer,
   controlBlock?: Buffer,
   annex?: Buffer,
   useLowR?: boolean,
-): SigningData {
+): SigningData<TNumber> {
   let vin: number;
   if (typeof signParams === 'number') {
     console.warn(
@@ -1510,7 +1539,7 @@ function getSigningData(
     );
     vin = signParams;
   } else if (typeof signParams === 'object') {
-    checkSignArgs(inputs, signParams);
+    checkSignArgs<TNumber>(inputs, signParams);
     ({
       vin,
       keyPair,
@@ -1547,7 +1576,7 @@ function getSigningData(
 
   const ourPubKey =
     keyPair.publicKey || (keyPair.getPublicKey && keyPair.getPublicKey());
-  if (!canSign(input)) {
+  if (!canSign<TNumber>(input)) {
     if (witnessValue !== undefined) {
       if (input.value !== undefined && input.value !== witnessValue)
         throw new Error('Input did not match witnessValue');
@@ -1555,8 +1584,8 @@ function getSigningData(
       input.value = witnessValue;
     }
 
-    if (!canSign(input)) {
-      const prepared = prepareInput(
+    if (!canSign<TNumber>(input)) {
+      const prepared = prepareInput<TNumber>(
         input,
         ourPubKey,
         redeemScript,
@@ -1569,7 +1598,8 @@ function getSigningData(
       Object.assign(input, prepared);
     }
 
-    if (!canSign(input)) throw Error(input.prevOutType + ' not supported');
+    if (!canSign<TNumber>(input))
+      throw Error(input.prevOutType + ' not supported');
   }
 
   // hashType can be 0 in Taproot, so can't use hashType || SIGHASH_ALL
@@ -1602,7 +1632,7 @@ function getSigningData(
       signatureHash = tx.hashForWitnessV0(
         vin,
         input.signScript as Buffer,
-        input.value as number,
+        input.value as TNumber,
         hashType,
       );
       break;
@@ -1610,7 +1640,7 @@ function getSigningData(
       signatureHash = tx.hashForWitnessV1(
         vin,
         inputs.map(({ prevOutScript }) => prevOutScript as Buffer),
-        inputs.map(({ value }) => value as number),
+        inputs.map(({ value }) => value as TNumber),
         hashType,
         leafHash,
       );

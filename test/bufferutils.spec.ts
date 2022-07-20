@@ -32,6 +32,19 @@ describe('bufferutils', () => {
     });
   });
 
+  describe('readUInt64BigIntLE', () => {
+    const checkValid = (f: { dec: string | number; hex: string }): void => {
+      it('decodes ' + f.hex, () => {
+        const buffer = Buffer.from(f.hex, 'hex');
+        const num = bufferutils.readUInt64BigIntLE(buffer, 0);
+
+        assert.strictEqual(num, BigInt(f.dec));
+      });
+    };
+    fixtures.valid.forEach(checkValid);
+    fixtures.validBigInt.forEach(checkValid);
+  });
+
   describe('writeUInt64LE', () => {
     fixtures.valid.forEach(f => {
       it('encodes ' + f.dec, () => {
@@ -48,6 +61,29 @@ describe('bufferutils', () => {
 
         assert.throws(() => {
           bufferutils.writeUInt64LE(buffer, f.dec, 0);
+        }, new RegExp(f.exception));
+      });
+    });
+  });
+
+  describe('writeUInt64BigIntLE', () => {
+    const checkValid = (f: { dec: string | number; hex: string }): void => {
+      it('encodes ' + f.dec, () => {
+        const buffer = Buffer.alloc(8, 0);
+
+        bufferutils.writeUInt64LE(buffer, BigInt(f.dec), 0);
+        assert.strictEqual(buffer.toString('hex'), f.hex);
+      });
+    };
+    fixtures.valid.forEach(checkValid);
+    fixtures.validBigInt.forEach(checkValid);
+
+    fixtures.invalid.writeUInt64BigIntLE.forEach(f => {
+      it('throws on ' + f.description, () => {
+        const buffer = Buffer.alloc(8, 0);
+
+        assert.throws(() => {
+          bufferutils.writeUInt64LE(buffer, BigInt(f.dec), 0);
         }, new RegExp(f.exception));
       });
     });
@@ -134,17 +170,21 @@ describe('bufferutils', () => {
         1,
         Math.pow(2, 32),
         Number.MAX_SAFE_INTEGER /* 2^53 - 1 */,
+        BigInt(Number.MAX_SAFE_INTEGER) + BigInt(1),
+        BigInt('0xffffffffffffffff'),
       ];
       const expectedBuffer = concatToBuffer([
         [0, 0, 0, 0, 0, 0, 0, 0],
         [1, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 1, 0, 0, 0],
         [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x1f, 0x00],
+        [0, 0, 0, 0, 0, 0, 0x20, 0],
+        [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff],
       ]);
       const bufferWriter = new BufferWriter(
         Buffer.allocUnsafe(expectedBuffer.length),
       );
-      values.forEach((value: number) => {
+      values.forEach((value: number | bigint) => {
         const expectedOffset = bufferWriter.offset + 8;
         bufferWriter.writeUInt64(value);
         testBuffer(bufferWriter, expectedBuffer, expectedOffset);
@@ -282,8 +322,8 @@ describe('bufferutils', () => {
   describe('BufferReader', () => {
     function testValue(
       bufferReader: BufferReader,
-      value: Buffer | number,
-      expectedValue: Buffer | number,
+      value: Buffer | number | bigint,
+      expectedValue: Buffer | number | bigint,
       expectedOffset: number = Buffer.isBuffer(expectedValue)
         ? expectedValue.length
         : 0,
@@ -295,7 +335,7 @@ describe('bufferutils', () => {
           expectedValue.slice(0, expectedOffset),
         );
       } else {
-        assert.strictEqual(value as number, expectedValue);
+        assert.strictEqual(value, expectedValue);
       }
     }
 
@@ -370,6 +410,31 @@ describe('bufferutils', () => {
         const expectedOffset = bufferReader.offset + 8;
         const val = bufferReader.readUInt64();
         testValue(bufferReader, val, value, expectedOffset);
+      });
+    });
+
+    it('readUInt64BigInt', () => {
+      const values = [
+        0,
+        1,
+        Math.pow(2, 32),
+        Number.MAX_SAFE_INTEGER /* 2^53 - 1 */,
+        BigInt(Number.MAX_SAFE_INTEGER) + BigInt(1),
+        BigInt('0xffffffffffffffff'),
+      ];
+      const buffer = concatToBuffer([
+        [0, 0, 0, 0, 0, 0, 0, 0],
+        [1, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 1, 0, 0, 0],
+        [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x1f, 0x00],
+        [0, 0, 0, 0, 0, 0, 0x20, 0],
+        [0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff],
+      ]);
+      const bufferReader = new BufferReader(buffer);
+      values.forEach((value: number | bigint) => {
+        const expectedOffset = bufferReader.offset + 8;
+        const val = bufferReader.readUInt64BigInt();
+        testValue(bufferReader, val, BigInt(value), expectedOffset);
       });
     });
 
