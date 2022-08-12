@@ -5,6 +5,14 @@ import * as bscript from '../src/script';
 import * as fixtures from './fixtures/transaction.json';
 import * as fixtures_bigint from './fixtures/transaction_bigint.json';
 
+// CR-686: Buffer.prototype.readBigUInt64LE and Buffer.prototype.writeBigUInt64LE might not be available in polyfill
+Buffer.prototype.readBigUInt64LE = (): bigint => {
+  assert.fail('unexpected use of readBigUInt64LE()');
+};
+Buffer.prototype.writeBigUInt64LE = (): number => {
+  assert.fail('unexpected use of writeBigUInt64LE()');
+};
+
 function runTest<TNumber extends number | bigint>(
   fixture: any,
   amountType: 'number' | 'bigint',
