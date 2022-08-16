@@ -17,6 +17,14 @@ console.warn = (): void => {
 import * as txb_fixtures from './fixtures/transaction_builder.json';
 import * as txb_big_fixtures from './fixtures/transaction_builder_bigint.json';
 
+// CR-686: Buffer.prototype.readBigUInt64LE and Buffer.prototype.writeBigUInt64LE might not be available in polyfill
+Buffer.prototype.readBigUInt64LE = (): bigint => {
+  assert.fail('unexpected use of readBigUInt64LE()');
+};
+Buffer.prototype.writeBigUInt64LE = (): number => {
+  assert.fail('unexpected use of writeBigUInt64LE()');
+};
+
 function toAmount(
   v: any | undefined,
   t: 'number' | 'bigint',

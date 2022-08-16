@@ -16,24 +16,36 @@ function verifuint(value, max) {
     throw new Error('value has a fractional component');
 }
 function readUInt64BigIntLE(buffer, offset) {
-  return buffer.readBigUInt64LE(offset);
+  const a = BigInt(buffer.readUInt32LE(offset));
+  let b = BigInt(buffer.readUInt32LE(offset + 4));
+  b *= BigInt('0x100000000');
+  verifuint(b + a, BigInt('0xffffffffffffffff'));
+  return b + a;
 }
 exports.readUInt64BigIntLE = readUInt64BigIntLE;
 function readUInt64LE(buffer, offset) {
-  const result = readUInt64BigIntLE(buffer, offset);
-  verifuint(result, 0x001fffffffffffff);
-  return Number(result);
+  const a = buffer.readUInt32LE(offset);
+  let b = buffer.readUInt32LE(offset + 4);
+  b *= 0x100000000;
+  verifuint(b + a, 0x001fffffffffffff);
+  return b + a;
 }
 exports.readUInt64LE = readUInt64LE;
 function writeUInt64LE(buffer, value, offset) {
   if (typeof value === 'number') {
     verifuint(value, 0x001fffffffffffff);
+    buffer.writeInt32LE(value & -1, offset);
+    buffer.writeUInt32LE(Math.floor(value / 0x100000000), offset + 4);
   } else if (typeof value === 'bigint') {
     verifuint(value, BigInt('0xffffffffffffffff'));
+    const mask = BigInt('0x100000000');
+    const lower32bits = value % mask;
+    const upper32bits = (value - lower32bits) / mask;
+    buffer.writeUInt32LE(Number(BigInt.asUintN(32, lower32bits)), offset);
+    buffer.writeUInt32LE(Number(BigInt.asUintN(32, upper32bits)), offset + 4);
   } else {
     throw new Error('value must be a number or bigint');
   }
-  buffer.writeBigUInt64LE(BigInt(value), offset);
   return offset + 8;
 }
 exports.writeUInt64LE = writeUInt64LE;
