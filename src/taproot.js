@@ -3,12 +3,21 @@
 // https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki
 // https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki
 Object.defineProperty(exports, '__esModule', { value: true });
-exports.getTaptreeRoot = exports.getTapleafHash = exports.parseControlBlock = exports.parseTaprootWitness = exports.getControlBlock = exports.getHuffmanTaptree = exports.tapTweakPubkey = exports.tapTweakPrivkey = exports.hashTapBranch = exports.hashTapLeaf = exports.serializeScriptSize = exports.aggregateMuSigPubkeys = exports.EVEN_Y_COORD_PREFIX = void 0;
+exports.getTaptreeRoot = exports.getTapleafHash = exports.parseControlBlock = exports.parseTaprootWitness = exports.getControlBlock = exports.getHuffmanTaptree = exports.tapTweakPubkey = exports.tapTweakPrivkey = exports.hashTapBranch = exports.hashTapLeaf = exports.serializeScriptSize = exports.aggregateMuSigPubkeys = exports.EVEN_Y_COORD_PREFIX = exports.VALID_LEAF_VERSIONS = void 0;
 const assert = require('assert');
 const FastPriorityQueue = require('fastpriorityqueue');
 const bcrypto = require('./crypto');
 const bscript = require('./script');
 const varuint = require('varuint-bitcoin');
+// https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki#cite_note-7
+// The values that comply to this rule are the 32 even values between 0xc0
+// and 0xfe and also 0x66, 0x7e, 0x80, 0x84, 0x96, 0x98, 0xba, 0xbc, 0xbe.
+exports.VALID_LEAF_VERSIONS = new Set(
+  Array(32)
+    .fill(0)
+    .map((_, i) => i * 2 + 0xc0)
+    .concat([0x66, 0x7e, 0x80, 0x84, 0x96, 0x98, 0xba, 0xbc, 0xbe]),
+);
 /**
  * The 0x02 prefix indicating an even Y coordinate which is implicitly assumed
  * on all 32 byte x-only pub keys as defined in BIP340.
@@ -293,9 +302,8 @@ function parseControlBlock(ecc, controlBlock) {
   if (!ecc.isXOnlyPoint(internalPubkey)) {
     throw new Error('internal pubkey is not an EC point');
   }
-  // The leaf version cannot be 0x50 as that would result in ambiguity with the annex.
   const leafVersion = controlBlock[0] & 0xfe;
-  if (leafVersion === 0x50) {
+  if (!exports.VALID_LEAF_VERSIONS.has(leafVersion)) {
     throw new Error('invalid leaf version');
   }
   const path = [];

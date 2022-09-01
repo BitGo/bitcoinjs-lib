@@ -1,5 +1,6 @@
 /// <reference types="node" />
 import { TinySecp256k1Interface, XOnlyPointAddTweakResult } from './types';
+export declare const VALID_LEAF_VERSIONS: Set<number>;
 /**
  * The 0x02 prefix indicating an even Y coordinate which is implicitly assumed
  * on all 32 byte x-only pub keys as defined in BIP340.

@@ -9,6 +9,16 @@ import * as bscript from './script';
 import { TinySecp256k1Interface, XOnlyPointAddTweakResult } from './types';
 const varuint = require('varuint-bitcoin');
 
+// https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki#cite_note-7
+// The values that comply to this rule are the 32 even values between 0xc0
+// and 0xfe and also 0x66, 0x7e, 0x80, 0x84, 0x96, 0x98, 0xba, 0xbc, 0xbe.
+export const VALID_LEAF_VERSIONS = new Set(
+  Array(32)
+    .fill(0)
+    .map((_, i) => i * 2 + 0xc0)
+    .concat([0x66, 0x7e, 0x80, 0x84, 0x96, 0x98, 0xba, 0xbc, 0xbe]),
+);
+
 /**
  * The 0x02 prefix indicating an even Y coordinate which is implicitly assumed
  * on all 32 byte x-only pub keys as defined in BIP340.
@@ -386,9 +396,8 @@ export function parseControlBlock(
     throw new Error('internal pubkey is not an EC point');
   }
 
-  // The leaf version cannot be 0x50 as that would result in ambiguity with the annex.
   const leafVersion = controlBlock[0] & 0xfe;
-  if (leafVersion === 0x50) {
+  if (!VALID_LEAF_VERSIONS.has(leafVersion)) {
     throw new Error('invalid leaf version');
   }
 
