@@ -81,7 +81,7 @@ export declare class Psbt {
     getFeeRate(): number;
     getFee(): bigint;
     finalizeAllInputs(): this;
-    finalizeInput(inputIndex: number, finalScriptsFunc?: FinalScriptsFunc): this;
+    finalizeInput(inputIndex: number, finalScriptsFunc?: FinalScriptsFunc, minRequiredSigCount?: number): this;
     getInputType(inputIndex: number): AllScriptType;
     inputHasPubkey(inputIndex: number, pubkey: Buffer): boolean;
     inputHasHDKey(inputIndex: number, root: HDSigner): boolean;
@@ -193,7 +193,8 @@ input: PsbtInput, // The PSBT input contents
 script: Buffer, // The "meaningful" locking script Buffer (redeemScript for P2SH etc.)
 isSegwit: boolean, // Is it segwit?
 isP2SH: boolean, // Is it P2SH?
-isP2WSH: boolean) => {
+isP2WSH: boolean, // Is it P2WSH?
+minRequiredSigCount?: number) => {
     finalScriptSig: Buffer | undefined;
     finalScriptWitness: Buffer | undefined;
 };
