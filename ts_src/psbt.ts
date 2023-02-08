@@ -217,6 +217,10 @@ export class Psbt {
     });
   }
 
+  get network(): Network {
+    return this.opts.network;
+  }
+
   combine(...those: Psbt[]): this {
     this.data.combine(...those.map(o => o.data));
     return this;

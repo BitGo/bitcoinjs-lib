@@ -148,6 +148,9 @@ class Psbt {
       };
     });
   }
+  get network() {
+    return this.opts.network;
+  }
   combine(...those) {
     this.data.combine(...those.map(o => o.data));
     return this;

@@ -8,7 +8,14 @@ import { describe, it } from 'mocha';
 const bip32 = BIP32Factory(ecc);
 const ECPair = ECPairFactory(ecc);
 
-import { networks as NETWORKS, payments, Psbt, Signer, SignerAsync } from '..';
+import {
+  networks,
+  networks as NETWORKS,
+  payments,
+  Psbt,
+  Signer,
+  SignerAsync,
+} from '..';
 
 import { fixtures } from './fixtures/psbt';
 
@@ -1113,6 +1120,13 @@ describe(`Psbt`, () => {
       psbt.locktime = 123;
       assert.strictEqual(psbt.locktime, 123);
       assert.strictEqual(psbt.locktime, (psbt as any).__CACHE.__TX.locktime);
+    });
+
+    it('.network is exposed as readonly', () => {
+      const psbt = new Psbt();
+
+      assert.strictEqual(psbt.network, networks.bitcoin);
+      assert.strictEqual(psbt.network, (psbt as any).opts.network);
     });
 
     it('.txInputs is exposed as a readonly clone', () => {
