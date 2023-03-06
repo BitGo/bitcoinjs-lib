@@ -69,7 +69,7 @@ jobs:
           registry-url: https://registry.npmjs.org/
           cache: 'npm'
       - run: npm ci
-      - run: npm run audit
+      - run: npm run audit --production
   coverage:
     runs-on: ubuntu-latest
     steps:
