@@ -23,6 +23,7 @@ export interface Payment {
   input?: Buffer;
   signatures?: Buffer[];
   pubkey?: Buffer;
+  taptreeRoot?: Buffer;
   internalPubkey?: Buffer;
   signature?: Buffer;
   address?: string;

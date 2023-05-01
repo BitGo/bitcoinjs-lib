@@ -81,7 +81,7 @@
     "bn.js": "^4.11.8",
     "bs58": "^4.0.0",
     "dhttp": "^3.0.0",
-    "ecpair": "git+https://github.com/brandonblack/ecpair#2fd5696110aa8bba136c5a5240019cd1ced16431",
+    "ecpair": "npm:@bitgo/ecpair@2.1.0-rc.0",
     "hoodwink": "^2.0.0",
     "minimaldata": "^1.0.2",
     "mocha": "^10.0.0",
