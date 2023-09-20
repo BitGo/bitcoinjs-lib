@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
+        uses: actions/setup-node@5e21ff4d9bc1a8cf6de233a3057d20ec6b3fb69d # v3
         with:
           node-version: ${{ matrix.node-version }}
           registry-url: https://registry.npmjs.org/
@@ -46,7 +46,7 @@ jobs:
     steps:
       - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
+        uses: actions/setup-node@5e21ff4d9bc1a8cf6de233a3057d20ec6b3fb69d # v3
         with:
           node-version: ${{ matrix.node-version }}
           registry-url: https://registry.npmjs.org/
@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
-      - uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
+      - uses: actions/setup-node@5e21ff4d9bc1a8cf6de233a3057d20ec6b3fb69d # v3
         with:
           node-version: 16
           registry-url: https://registry.npmjs.org/
@@ -74,7 +74,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
-      - uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
+      - uses: actions/setup-node@5e21ff4d9bc1a8cf6de233a3057d20ec6b3fb69d # v3
         with:
           node-version: 16
           registry-url: https://registry.npmjs.org/
@@ -85,7 +85,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
-      - uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
+      - uses: actions/setup-node@5e21ff4d9bc1a8cf6de233a3057d20ec6b3fb69d # v3
         with:
           node-version: 16
           registry-url: https://registry.npmjs.org/
@@ -96,7 +96,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
-      - uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
+      - uses: actions/setup-node@5e21ff4d9bc1a8cf6de233a3057d20ec6b3fb69d # v3
         with:
           node-version: 16
           registry-url: https://registry.npmjs.org/
@@ -107,7 +107,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
-      - uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
+      - uses: actions/setup-node@5e21ff4d9bc1a8cf6de233a3057d20ec6b3fb69d # v3
         with:
           node-version: 16
           registry-url: https://registry.npmjs.org/
@@ -118,7 +118,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
-      - uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
+      - uses: actions/setup-node@5e21ff4d9bc1a8cf6de233a3057d20ec6b3fb69d # v3
         with:
           node-version: 16
           registry-url: https://registry.npmjs.org/
@@ -140,7 +140,7 @@ jobs:
       - lint-tests
     steps:
       - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
-      - uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
+      - uses: actions/setup-node@5e21ff4d9bc1a8cf6de233a3057d20ec6b3fb69d # v3
         with:
           node-version: 18
           cache: 'npm'
