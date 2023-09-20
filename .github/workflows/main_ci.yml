@@ -22,7 +22,7 @@ jobs:
         node-version: [14, 16]
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
     steps:
-      - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
         with:
@@ -44,7 +44,7 @@ jobs:
         ports:
           - 8080:8080
     steps:
-      - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
         with:
@@ -62,7 +62,7 @@ jobs:
   audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
       - uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
         with:
           node-version: 16
@@ -73,7 +73,7 @@ jobs:
   coverage:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
       - uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
         with:
           node-version: 16
@@ -84,7 +84,7 @@ jobs:
   format:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
       - uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
         with:
           node-version: 16
@@ -95,7 +95,7 @@ jobs:
   gitdiff:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
       - uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
         with:
           node-version: 16
@@ -106,7 +106,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
       - uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
         with:
           node-version: 16
@@ -117,7 +117,7 @@ jobs:
   lint-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
       - uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
         with:
           node-version: 16
@@ -139,7 +139,7 @@ jobs:
       - lint
       - lint-tests
     steps:
-      - uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
       - uses: actions/setup-node@eeb10cff27034e7acf239c5d29f62154018672fd # v3
         with:
           node-version: 18
