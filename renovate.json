@@ -5,5 +5,11 @@
   ],
   "baseBranches": [
     "master"
+  ],
+  "enabledManagers": [
+    "github-actions"
+  ],
+  "schedule": [
+    "on monday"
   ]
 }

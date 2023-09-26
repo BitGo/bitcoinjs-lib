@@ -1,0 +1,5 @@
+## THIS SHOULD ALWAYS BE FIRST ##
+* @BitGo/btc-team
+
+.github @BitGo/btc-team @BitGo/infra
+renovate.json @BitGo/btc-team @BitGo/infra
