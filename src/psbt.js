@@ -78,6 +78,7 @@ class Psbt {
       // We will disable exporting the Psbt when unsafe sign is active.
       // because it is not BIP174 compliant.
       __UNSAFE_SIGN_NONSEGWIT: false,
+      __WARN_UNSAFE_SIGN_NONSEGWIT: true,
       __TX_FROM_BUFFER: buf =>
         this.constructor.transactionFromBuffer(buf, this.opts.network),
     };
@@ -1016,15 +1017,17 @@ function getHashForSig(inputIndex, input, cache, forValidate, sighashTypes) {
           `${meaningfulScript.toString('hex')}`,
       );
     if (!forValidate && cache.__UNSAFE_SIGN_NONSEGWIT !== false)
-      console.warn(
-        'Warning: Signing non-segwit inputs without the full parent transaction ' +
-          'means there is a chance that a miner could feed you incorrect information ' +
-          "to trick you into paying large fees. This behavior is the same as Psbt's predecesor " +
-          '(TransactionBuilder - now removed) when signing non-segwit scripts. You are not ' +
-          'able to export this Psbt with toBuffer|toBase64|toHex since it is not ' +
-          'BIP174 compliant.\n*********************\nPROCEED WITH CAUTION!\n' +
-          '*********************',
-      );
+      if (cache.__WARN_UNSAFE_SIGN_NONSEGWIT) {
+        console.warn(
+          'Warning: Signing non-segwit inputs without the full parent transaction ' +
+            'means there is a chance that a miner could feed you incorrect information ' +
+            "to trick you into paying large fees. This behavior is the same as Psbt's predecesor " +
+            '(TransactionBuilder - now removed) when signing non-segwit scripts. You are not ' +
+            'able to export this Psbt with toBuffer|toBase64|toHex since it is not ' +
+            'BIP174 compliant.\n*********************\nPROCEED WITH CAUTION!\n' +
+            '*********************',
+        );
+      }
     hash = unsignedTx.hashForSignature(
       inputIndex,
       meaningfulScript,
