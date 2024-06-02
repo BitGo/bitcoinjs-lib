@@ -46,6 +46,7 @@ export type PaymentFunction = () => Payment;
 export interface PaymentOpts {
   validate?: boolean;
   allowIncomplete?: boolean;
+  minRequiredSigCount?: number;
   eccLib?: TinySecp256k1Interface;
 }
 

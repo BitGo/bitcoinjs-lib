@@ -25,6 +25,12 @@ export function p2ms(a: Payment, opts?: PaymentOpts): Payment {
     !a.signatures
   )
     throw new TypeError('Not enough data');
+  const minRequiredSigCount =
+    opts !== undefined ? opts.minRequiredSigCount : undefined;
+  if (minRequiredSigCount !== undefined && minRequiredSigCount < 1)
+    throw new Error(
+      `minRequiredSigCount=${minRequiredSigCount} is less than minimum value 1`,
+    );
   opts = Object.assign({ validate: true }, opts || {});
 
   function isAcceptableSignature(x: Buffer | number): boolean {
@@ -136,7 +142,15 @@ export function p2ms(a: Payment, opts?: PaymentOpts): Payment {
     }
 
     if (a.signatures) {
-      if (a.signatures.length < o.m!)
+      let m = o.m!;
+      if (o.m !== undefined && minRequiredSigCount !== undefined) {
+        if (o.m < minRequiredSigCount)
+          throw new TypeError(
+            `minRequiredSigCount=${minRequiredSigCount} is more than m=${o.m}`,
+          );
+        m = minRequiredSigCount;
+      }
+      if (a.signatures.length < m)
         throw new TypeError('Not enough signatures provided');
       if (a.signatures.length > o.m!)
         throw new TypeError('Too many signatures provided');
@@ -152,7 +166,19 @@ export function p2ms(a: Payment, opts?: PaymentOpts): Payment {
 
       if (a.signatures && !stacksEqual(a.signatures, o.signatures!))
         throw new TypeError('Signature mismatch');
-      if (a.m !== undefined && a.m !== a.signatures!.length)
+      if (
+        a.m !== undefined &&
+        minRequiredSigCount !== undefined &&
+        a.m < minRequiredSigCount
+      )
+        throw new TypeError(
+          `minRequiredSigCount=${minRequiredSigCount} is more than m=${a.m}`,
+        );
+      if (
+        minRequiredSigCount === undefined &&
+        a.m !== undefined &&
+        a.m !== a.signatures!.length
+      )
         throw new TypeError('Signature count mismatch');
     }
   }
