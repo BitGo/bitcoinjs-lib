@@ -145,13 +145,11 @@ export class Psbt {
       __TX: (this.data.globalMap.unsignedTx as PsbtTransaction).tx,
       // Psbt's predecesor (TransactionBuilder - now removed) behavior
       // was to not confirm input values  before signing.
-      // Even though we highly encourage people to get
-      // the full parent transaction to verify values, the ability to
-      // sign non-segwit inputs without the full transaction was often
-      // requested. So the only way to activate is to use @ts-ignore.
-      // We will disable exporting the Psbt when unsafe sign is active.
-      // because it is not BIP174 compliant.
-      __UNSAFE_SIGN_NONSEGWIT: false,
+      // Due to the potential of DDoS by requiring the previous
+      // transaction to be in the input map, we are defaulting the
+      // behavior to not require the previous transaction and instead
+      // use a witnessUtxo.
+      __UNSAFE_SIGN_NONSEGWIT: true,
       __WARN_UNSAFE_SIGN_NONSEGWIT: true,
       __TX_FROM_BUFFER: buf =>
         (this.constructor as typeof Psbt).transactionFromBuffer(
@@ -950,7 +948,8 @@ function canFinalize(
 
 function checkCache(cache: PsbtCache): void {
   if (cache.__UNSAFE_SIGN_NONSEGWIT !== false) {
-    throw new Error('Not BIP174 compliant, can not export');
+    // Do not throw in this case as we are now defaulting this to true
+    // throw new Error('Not BIP174 compliant, can not export');
   }
 }
 
