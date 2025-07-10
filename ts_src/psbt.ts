@@ -150,7 +150,7 @@ export class Psbt {
       // behavior to not require the previous transaction and instead
       // use a witnessUtxo.
       __UNSAFE_SIGN_NONSEGWIT: true,
-      __WARN_UNSAFE_SIGN_NONSEGWIT: true,
+      __WARN_UNSAFE_SIGN_NONSEGWIT: false,
       __TX_FROM_BUFFER: buf =>
         (this.constructor as typeof Psbt).transactionFromBuffer(
           buf,
