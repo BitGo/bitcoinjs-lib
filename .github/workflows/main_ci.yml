@@ -150,5 +150,5 @@ jobs:
       - run: npm ci
       - run: ./node_modules/.bin/semantic-release
         env:
-          NPM_TOKEN: "n/a"
+          NPM_TOKEN: "FAKE_NPM_TOKEN_FOR_SEMANTIC_RELEASE"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
