@@ -2,6 +2,16 @@
   "GHSA-rc47-6667-2j5j": {
     "active": true,
     "notes": "ignore until a fix is introduced to semantic-release. See https://github.com/semantic-release/npm/issues/574",
-    "expiry": 1676926476000
+    "expiry": 1790000000000
+  },
+  "1109536": {
+    "active": true,
+    "notes": "cipher-base: Patched version exists, but upstream dependancies are pinned to vulnerable versions and have not been updated. See https://github.com/advisories/GHSA-cpq7-6gpm-g9rc",
+    "expiry": 1790000000000
+  },
+  "1109535": {
+    "active": true,
+    "notes": "sha.js: Patched version exists, but upstream dependancies are pinned to vulnerable versions and have not been updated. See https://github.com/advisories/GHSA-95m3-7q98-8xr5",
+    "expiry": 1790000000000
   }
 }
