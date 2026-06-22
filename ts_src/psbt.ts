@@ -370,6 +370,7 @@ export class Psbt {
   finalizeInput(
     inputIndex: number,
     finalScriptsFunc: FinalScriptsFunc = getFinalScripts,
+    minRequiredSigCount?: number,
   ): this {
     const input = checkForInput(this.data.inputs, inputIndex);
     const { script, isP2SH, isP2WSH, isSegwit } = getScriptFromInput(
@@ -388,6 +389,7 @@ export class Psbt {
       isSegwit,
       isP2SH,
       isP2WSH,
+      minRequiredSigCount,
     );
 
     if (finalScriptSig) this.data.updateInput(inputIndex, { finalScriptSig });
@@ -932,6 +934,7 @@ function canFinalize(
   input: PsbtInput,
   script: Buffer,
   scriptType: string,
+  minRequiredSigCount?: number,
 ): boolean {
   switch (scriptType) {
     case 'pubkey':
@@ -940,7 +943,17 @@ function canFinalize(
       return hasSigs(1, input.partialSig);
     case 'multisig':
       const p2ms = payments.p2ms({ output: script });
-      return hasSigs(p2ms.m!, input.partialSig, p2ms.pubkeys);
+      let m = p2ms.m!;
+      if (p2ms.m !== undefined && minRequiredSigCount !== undefined) {
+        if (p2ms.m < minRequiredSigCount)
+          throw new Error(
+            `minRequiredSigCount=${minRequiredSigCount} is more than m=${
+              p2ms.m
+            }`,
+          );
+        m = minRequiredSigCount;
+      }
+      return hasSigs(m, input.partialSig, p2ms.pubkeys);
     default:
       return false;
   }
@@ -1185,6 +1198,7 @@ type FinalScriptsFunc = (
   isSegwit: boolean, // Is it segwit?
   isP2SH: boolean, // Is it P2SH?
   isP2WSH: boolean, // Is it P2WSH?
+  minRequiredSigCount?: number,
 ) => {
   finalScriptSig: Buffer | undefined;
   finalScriptWitness: Buffer | undefined;
@@ -1197,12 +1211,17 @@ function getFinalScripts(
   isSegwit: boolean,
   isP2SH: boolean,
   isP2WSH: boolean,
+  minRequiredSigCount?: number,
 ): {
   finalScriptSig: Buffer | undefined;
   finalScriptWitness: Buffer | undefined;
 } {
+  if (minRequiredSigCount !== undefined && minRequiredSigCount < 1)
+    throw new Error(
+      `minRequiredSigCount=${minRequiredSigCount} is less than minimum value 1`,
+    );
   const scriptType = classifyScript(script);
-  if (!canFinalize(input, script, scriptType))
+  if (!canFinalize(input, script, scriptType, minRequiredSigCount))
     throw new Error(`Can not finalize input #${inputIndex}`);
   return prepareFinalScripts(
     script,
@@ -1211,6 +1230,7 @@ function getFinalScripts(
     isSegwit,
     isP2SH,
     isP2WSH,
+    minRequiredSigCount,
   );
 }
 
@@ -1221,6 +1241,7 @@ function prepareFinalScripts(
   isSegwit: boolean,
   isP2SH: boolean,
   isP2WSH: boolean,
+  minRequiredSigCount?: number,
 ): {
   finalScriptSig: Buffer | undefined;
   finalScriptWitness: Buffer | undefined;
@@ -1229,7 +1250,12 @@ function prepareFinalScripts(
   let finalScriptWitness: Buffer | undefined;
 
   // Wow, the payments API is very handy
-  const payment: payments.Payment = getPayment(script, scriptType, partialSig);
+  const payment: payments.Payment = getPayment(
+    script,
+    scriptType,
+    partialSig,
+    minRequiredSigCount,
+  );
   const p2wsh = !isP2WSH ? null : payments.p2wsh({ redeem: payment });
   const p2sh = !isP2SH ? null : payments.p2sh({ redeem: p2wsh || payment });
 
@@ -1394,15 +1420,21 @@ function getPayment(
   script: Buffer,
   scriptType: string,
   partialSig: PartialSig[],
+  minRequiredSigCount?: number,
 ): payments.Payment {
   let payment: payments.Payment;
   switch (scriptType) {
     case 'multisig':
       const sigs = getSortedSigs(script, partialSig);
-      payment = payments.p2ms({
-        output: script,
-        signatures: sigs,
-      });
+      payment = payments.p2ms(
+        {
+          output: script,
+          signatures: sigs,
+        },
+        {
+          minRequiredSigCount,
+        },
+      );
       break;
     case 'pubkey':
       payment = payments.p2pk({
