@@ -4,6 +4,8 @@
 
 BitGo takes the security of its open-source software seriously.
 
+This policy applies to BitGo-specific changes in this repository. Vulnerabilities affecting the upstream project should be reported according to the upstream project's security policy.
+
 If you discover a security vulnerability in a public BitGo repository, please do not report it through a public GitHub issue, discussion, or pull request.
 
 Please report it privately by emailing **security@bitgo.com** and include:
